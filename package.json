@@ -1,0 +1,13 @@
+{
+  "name": "simple-calculator",
+  "version": "1.0.0",
+  "description": "A client-side single-page calculator application.",
+  "scripts": {
+    "start": "http-server . -o",
+    "preview": "http-server . -o"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "license": "MIT"
+}
