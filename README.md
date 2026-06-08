@@ -1,69 +1,25 @@
-# Simple Calculator
+# Calculator UI
 
-A minimalist, client-side calculator application built as a single-page application (SPA) using HTML, CSS, and vanilla JavaScript.
+A simple, production-ready calculator frontend that implements **ADR-001**: Show the user's input expression in a dedicated display area.
 
-## Architecture Decisions (ADR)
+## Quick Start
 
-This project follows the agreed Architecture Decision Records:
-
-- **ADR-001**: Client-Side SPA – all logic runs in the browser; no server required.
-- **ADR-002**: Functional Approach – arithmetic operations are implemented as pure functions (`add`, `subtract`, `multiply`, `divide`).
+1. Ensure you have Node.js installed.
+2. Run `npm install` (optional – only needed if you add dependencies).
+3. Run `npm start` to launch a local development server (default: http://localhost:3000).
+4. Open the URL in your browser.
 
 ## Features
 
-- Basic arithmetic: addition, subtraction, multiplication, division
-- Percentage and negation
-- Clear display (C)
-- Keyboard support
-- Division by zero error handling
-- Responsive design
+- **Input Display**: Lives as the user types or clicks buttons, showing the concatenated expression (e.g., `12+3*4`).
+- **Result Display**: Shows the computed result after pressing `=`.
+- **Basic arithmetic**: addition, subtraction, multiplication, division.
+- **Clear button** to reset both displays.
 
-## Getting Started
+## Architecture
 
-### Prerequisites
+Single-page static application built with vanilla HTML, CSS, and JavaScript. No external frameworks or back-end required.
 
-- A modern web browser (Chrome, Firefox, Edge, Safari)
+## ADR Reference
 
-### Running Locally
-
-Simply open `index.html` in your browser. For a more realistic dev experience, serve it via a lightweight HTTP server:
-
-```bash
-# If you have Node.js installed
-npm install -g http-server
-http-server . -o
-```
-
-Or use Python:
-```bash
-python3 -m http.server 8080
-```
-
-Then open `http://localhost:8080` in your browser.
-
-## Project Structure
-
-```
-.
-├── index.html      # Main calculator application (HTML, CSS, JS)
-├── README.md       # This file
-├── package.json    # Optional: for local development server
-└── .gitignore      # Ignores node_modules (if using npm)
-```
-
-## Usage
-
-- Click the buttons or use your keyboard.
-- Numbers: `0-9`, decimal `.`
-- Operators: `+`, `-`, `*`, `/`
-- Equals: `Enter` or `=`
-- Clear: `Escape` or `C` button
-- Backspace: `Backspace` key
-
-## Build & Deploy
-
-No build step required. Deploy `index.html` to any static hosting service (Netlify, Vercel, GitHub Pages, etc.).
-
-## License
-
-MIT
+- **ADR-001**: Added a dedicated read-only input display area to the calculator UI (see `index.html`). Refer to the ADR for rationale and alternatives.

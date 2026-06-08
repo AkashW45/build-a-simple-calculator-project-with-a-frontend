@@ -3,315 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Calculator</title>
-  <style>
-    /* ---------- Global Reset & Base ---------- */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #f4f6f9;
-      margin: 0;
-    }
-    .calculator {
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-      padding: 24px;
-      width: 320px;
-      max-width: 95vw;
-    }
-    .display {
-      background: #eef1f5;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
-      text-align: right;
-      font-size: 2rem;
-      font-weight: 600;
-      color: #1a1a2e;
-      overflow-x: auto;
-      white-space: nowrap;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-    .button-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-    button {
-      background: #f0f2f5;
-      border: none;
-      border-radius: 8px;
-      padding: 16px 0;
-      font-size: 1.3rem;
-      font-weight: 500;
-      color: #1a1a2e;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-    }
-    button:hover {
-      background: #e2e5ea;
-    }
-    button:active {
-      transform: scale(0.95);
-    }
-    button.operator {
-      background: #4a90d9;
-      color: #fff;
-    }
-    button.operator:hover {
-      background: #357abd;
-    }
-    button.equals {
-      background: #28a745;
-      color: #fff;
-      grid-column: span 2;
-    }
-    button.equals:hover {
-      background: #218838;
-    }
-    button.clear {
-      background: #dc3545;
-      color: #fff;
-    }
-    button.clear:hover {
-      background: #c82333;
-    }
-    button.span-two {
-      grid-column: span 2;
-    }
-  </style>
+  <title>Calculator</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="calculator" role="application" aria-label="Calculator">
-    <div class="display" id="display" aria-live="polite">0</div>
-    <div class="button-grid">
-      <!-- Row 1: C, ±, %, ÷ -->
-      <button class="clear" data-action="clear">C</button>
-      <button data-action="negate">±</button>
-      <button data-action="percent">%</button>
-      <button class="operator" data-action="divide">÷</button>
-
-      <!-- Row 2: 7,8,9,× -->
-      <button data-value="7">7</button>
-      <button data-value="8">8</button>
-      <button data-value="9">9</button>
-      <button class="operator" data-action="multiply">×</button>
-
-      <!-- Row 3: 4,5,6,− -->
-      <button data-value="4">4</button>
-      <button data-value="5">5</button>
-      <button data-value="6">6</button>
-      <button class="operator" data-action="subtract">−</button>
-
-      <!-- Row 4: 1,2,3,+ -->
-      <button data-value="1">1</button>
-      <button data-value="2">2</button>
-      <button data-value="3">3</button>
-      <button class="operator" data-action="add">+</button>
-
-      <!-- Row 5: 0 (span2), ., = -->
-      <button class="span-two" data-value="0">0</button>
-      <button data-value=".">.</button>
-      <button class="equals" data-action="equals">=</button>
+  <div class="calculator">
+    <div class="display">
+      <div id="input-display" class="input-display"></div>
+      <div id="result-display" class="result-display">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn" data-value="7">7</button>
+      <button class="btn" data-value="8">8</button>
+      <button class="btn" data-value="9">9</button>
+      <button class="btn operator" data-value="/">÷</button>
+      <button class="btn" data-value="4">4</button>
+      <button class="btn" data-value="5">5</button>
+      <button class="btn" data-value="6">6</button>
+      <button class="btn operator" data-value="*">×</button>
+      <button class="btn" data-value="1">1</button>
+      <button class="btn" data-value="2">2</button>
+      <button class="btn" data-value="3">3</button>
+      <button class="btn operator" data-value="-">−</button>
+      <button class="btn" data-value="0">0</button>
+      <button class="btn" data-value=".">.</button>
+      <button class="btn" id="clear">C</button>
+      <button class="btn operator" data-value="+">+</button>
+      <button class="btn equals" id="equals">=</button>
     </div>
   </div>
-
-  <script>
-    // ---------- Pure arithmetic functions (ADR-002) ----------
-    const add      = (a, b) => a + b;
-    const subtract = (a, b) => a - b;
-    const multiply = (a, b) => a * b;
-    const divide   = (a, b) => b === 0 ? 'Error' : a / b;  // Handle division by zero
-
-    /** Map action strings to pure functions */
-    const operationMap = {
-      add, subtract, multiply, divide
-    };
-
-    // ---------- Calculator state ----------
-    let currentInput = '';      // string being typed
-    let previousInput = '';     // accumulated operand
-    let currentOperation = null;
-    let shouldResetDisplay = false;
-
-    // DOM references
-    const display = document.getElementById('display');
-
-    // ---------- Display update helper ----------
-    function updateDisplay(value) {
-      display.textContent = value || '0';
-    }
-
-    // ---------- Pure helper: format number for display ----------
-    function formatNumber(num) {
-      if (num === 'Error') return 'Error';
-      const str = String(num);
-      // Limit to 12 characters for readability
-      return str.length > 12 ? Number(num).toExponential(5) : str;
-    }
-
-    // ---------- Input handlers (stateless where possible) ----------
-    function handleDigit(digit) {
-      if (shouldResetDisplay) {
-        currentInput = '';
-        shouldResetDisplay = false;
-      }
-      // Prevent multiple decimal points
-      if (digit === '.' && currentInput.includes('.')) return;
-      currentInput += digit;
-      updateDisplay(currentInput);
-    }
-
-    function handleOperator(action) {
-      if (currentInput === '' && previousInput === '') return;
-      if (currentInput !== '') {
-        // If there's a pending operation, compute it first
-        if (currentOperation && previousInput !== '') {
-          compute();
-        } else {
-          previousInput = currentInput;
-        }
-        currentInput = '';
-      }
-      currentOperation = action;
-      shouldResetDisplay = false;
-    }
-
-    function compute() {
-      if (currentOperation === null || previousInput === '' || currentInput === '') {
-        // Insufficient operands – nothing to compute
-        return;
-      }
-      const a = parseFloat(previousInput);
-      const b = parseFloat(currentInput);
-      const operation = operationMap[currentOperation];
-      if (!operation) return;
-
-      let result = operation(a, b);
-      if (result === 'Error') {
-        updateDisplay('Error');
-        currentInput = '';
-        previousInput = '';
-        currentOperation = null;
-        shouldResetDisplay = true;
-        return;
-      }
-      // Round to avoid floating-point artifacts
-      result = parseFloat(result.toPrecision(12));
-      const formatted = formatNumber(result);
-      updateDisplay(formatted);
-      previousInput = String(result);
-      currentInput = '';
-      currentOperation = null;
-      shouldResetDisplay = true;
-    }
-
-    function handleEquals() {
-      if (currentOperation && previousInput !== '' && currentInput !== '') {
-        compute();
-      }
-    }
-
-    function handleClear() {
-      currentInput = '';
-      previousInput = '';
-      currentOperation = null;
-      shouldResetDisplay = false;
-      updateDisplay('0');
-    }
-
-    function handleNegate() {
-      if (currentInput.startsWith('-')) {
-        currentInput = currentInput.slice(1);
-      } else if (currentInput !== '' && currentInput !== '0') {
-        currentInput = '-' + currentInput;
-      }
-      updateDisplay(currentInput || '0');
-    }
-
-    function handlePercent() {
-      if (currentInput === '') return;
-      const num = parseFloat(currentInput);
-      const result = num / 100;
-      currentInput = String(result);
-      updateDisplay(formatNumber(result));
-    }
-
-    // ---------- Event handling ----------
-    function handleButtonClick(e) {
-      const button = e.currentTarget;
-      const value = button.dataset.value;
-      const action = button.dataset.action;
-
-      if (value !== undefined) {
-        handleDigit(value);
-      } else if (action) {
-        switch (action) {
-          case 'clear':   handleClear(); break;
-          case 'negate':  handleNegate(); break;
-          case 'percent': handlePercent(); break;
-          case 'equals':  handleEquals(); break;
-          case 'add':
-          case 'subtract':
-          case 'multiply':
-          case 'divide':   handleOperator(action); break;
-          default: break;
-        }
-      }
-    }
-
-    // ---------- Keyboard support ----------
-    const keyMap = {
-      '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
-      '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
-      '.': '.',
-      '+': 'add',
-      '-': 'subtract',
-      '*': 'multiply',
-      '/': 'divide',
-      'Enter': 'equals',
-      'Escape': 'clear',
-      'Backspace': 'backspace'
-    };
-
-    document.addEventListener('keydown', (e) => {
-      const key = e.key;
-      if (key === 'Backspace') {
-        e.preventDefault();
-        currentInput = currentInput.slice(0, -1);
-        updateDisplay(currentInput || '0');
-        return;
-      }
-      const mapped = keyMap[key];
-      if (!mapped) return;
-      e.preventDefault();
-      // Use same handler logic by programmatically triggering
-      if ('0123456789.'.includes(mapped)) {
-        handleDigit(mapped);
-      } else {
-        // It's an action
-        const actionButtons = document.querySelectorAll(`[data-action="${mapped}"]`);
-        if (actionButtons.length) {
-          actionButtons[0].click();
-        }
-      }
-    });
-
-    // ---------- Attach click listeners ----------
-    document.querySelectorAll('.button-grid button').forEach(btn => {
-      btn.addEventListener('click', handleButtonClick);
-    });
-
-    // Initial display
-    updateDisplay('0');
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
