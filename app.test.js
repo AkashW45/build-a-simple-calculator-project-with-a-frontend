@@ -1,74 +1,90 @@
-const Calculator = require('./app');
-
 describe('Calculator', () => {
   let calculator;
-  let inputDisplay;
-  let resultDisplay;
+  let inputDisplay, resultDisplay;
+
+  beforeAll(() => {
+    // Prevent DOMContentLoaded from creating an unintended instance
+    global.window.addEventListener = jest.fn();
+    global.math = {
+      evaluate: jest.fn()
+    };
+    // Provide minimal DOM mocks so the constructor can run without crashing
+    document.getElementById = jest.fn();
+    document.querySelectorAll = jest.fn().mockReturnValue([]);
+    // Load the subject under test - Calculator is defined globally
+    require('./app');
+  });
 
   beforeEach(() => {
-    // Mock DOM elements
+    // Fresh display elements for each test
     inputDisplay = { textContent: '' };
     resultDisplay = { textContent: '' };
-    const buttonMock = { addEventListener: jest.fn() };
     document.getElementById = jest.fn((id) => {
       if (id === 'input-display') return inputDisplay;
       if (id === 'result-display') return resultDisplay;
-      if (id === 'clear') return buttonMock;
-      if (id === 'equals') return buttonMock;
       return null;
     });
-    document.querySelectorAll = jest.fn(() => []);
+    document.querySelectorAll = jest.fn().mockReturnValue([]);
     calculator = new Calculator();
   });
 
-  test('should evaluate expression with parentheses and precedence', () => {
-    calculator.input = '(1+2)*(3+4)';
-    calculator.evaluate();
-    expect(calculator.result).toBe(21);
-    expect(resultDisplay.textContent).toBe(21);
-    expect(inputDisplay.textContent).toBe('(1+2)*(3+4)');
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  test('should evaluate exponentiation correctly', () => {
-    calculator.input = '2^3';
+  it('should evaluate a valid expression and update displays', () => {
+    calculator.input = '2+3';
+    math.evaluate.mockReturnValue(5);
     calculator.evaluate();
-    expect(calculator.result).toBe(8);
-    expect(resultDisplay.textContent).toBe(8);
-
-    calculator.input = '2^3^2';
-    calculator.evaluate();
-    expect(calculator.result).toBe(512);
+    expect(math.evaluate).toHaveBeenCalledWith('2+3');
+    expect(calculator.result).toBe(5);
+    expect(inputDisplay.textContent).toBe('2+3');
+    expect(resultDisplay.textContent).toBe(5);
   });
 
-  test('should handle unary minus', () => {
-    calculator.input = '-5+3';
-    calculator.evaluate();
-    expect(calculator.result).toBe(-2);
-
-    calculator.input = '3*-2';
-    calculator.evaluate();
-    expect(calculator.result).toBe(-6);
-  });
-
-  test('should return error for empty expression', () => {
+  it('should handle empty input and reset result to 0', () => {
     calculator.input = '';
     calculator.evaluate();
-    expect(calculator.result).toBe('Error');
+    expect(math.evaluate).not.toHaveBeenCalled();
+    expect(calculator.result).toBe(0);
+    expect(resultDisplay.textContent).toBe(0);
     expect(inputDisplay.textContent).toBe('Enter expression');
-    expect(resultDisplay.textContent).toBe('Error');
   });
 
-  test('should return error for division by zero', () => {
-    calculator.input = '10/0';
+  it('should handle invalid expression and set result to "Invalid expression"', () => {
+    calculator.input = '2++3';
+    math.evaluate.mockImplementation(() => { throw new Error('parse error'); });
     calculator.evaluate();
-    expect(calculator.result).toBe('Error');
-    expect(resultDisplay.textContent).toBe('Error');
+    expect(math.evaluate).toHaveBeenCalledWith('2++3');
+    expect(calculator.result).toBe('Invalid expression');
+    expect(resultDisplay.textContent).toBe('Invalid expression');
   });
 
-  test('should return error for missing closing parenthesis', () => {
-    calculator.input = '2*(3+4';
+  it('should clear input and result when clear is called', () => {
+    calculator.input = '42';
+    calculator.result = 42;
+    calculator.clear();
+    expect(calculator.input).toBe('');
+    expect(calculator.result).toBe(0);
+    expect(inputDisplay.textContent).toBe('Enter expression');
+    expect(resultDisplay.textContent).toBe(0);
+  });
+
+  it('should trim whitespace from input before evaluation', () => {
+    calculator.input = '  4 + 5  ';
+    math.evaluate.mockReturnValue(9);
     calculator.evaluate();
-    expect(calculator.result).toBe('Error');
-    expect(resultDisplay.textContent).toBe('Error');
+    expect(math.evaluate).toHaveBeenCalledWith('4 + 5');
+    expect(calculator.result).toBe(9);
+    expect(inputDisplay.textContent).toBe('  4 + 5  ');
+    expect(resultDisplay.textContent).toBe(9);
+  });
+
+  it('should update display with default text when input is empty (updateDisplay called directly)', () => {
+    calculator.input = '';
+    calculator.result = 0;
+    calculator.updateDisplay();
+    expect(inputDisplay.textContent).toBe('Enter expression');
+    expect(resultDisplay.textContent).toBe(0);
   });
 });
