@@ -1,113 +1,74 @@
-const fs = require('fs');
-const path = require('path');
+const Calculator = require('./app');
 
-// Setup DOM environment
-beforeAll(() => {
-  // Mock window.addEventListener to capture DOMContentLoaded handler
-  let domReadyHandler;
-  const originalAddEventListener = window.addEventListener;
-  window.addEventListener = (event, handler) => {
-    if (event === 'DOMContentLoaded') {
-      domReadyHandler = handler;
-    } else {
-      originalAddEventListener.call(window, event, handler);
-    }
-  };
+describe('Calculator', () => {
+  let calculator;
+  let inputDisplay;
+  let resultDisplay;
 
-  // Create minimal HTML structure required by Calculator
-  document.body.innerHTML = `
-    <div id="input-display"></div>
-    <div id="result-display"></div>
-    <button class="btn" data-value="1">1</button>
-    <button class="btn" data-value="2">2</button>
-    <button class="btn" data-value="+">+</button>
-    <button class="btn" data-value="-">-</button>
-    <button class="btn" data-value="*">*</button>
-    <button class="btn" data-value="/">/</button>
-    <button id="clear">C</button>
-    <button id="equals">=</button>
-  `;
+  beforeEach(() => {
+    // Mock DOM elements
+    inputDisplay = { textContent: '' };
+    resultDisplay = { textContent: '' };
+    const buttonMock = { addEventListener: jest.fn() };
+    document.getElementById = jest.fn((id) => {
+      if (id === 'input-display') return inputDisplay;
+      if (id === 'result-display') return resultDisplay;
+      if (id === 'clear') return buttonMock;
+      if (id === 'equals') return buttonMock;
+      return null;
+    });
+    document.querySelectorAll = jest.fn(() => []);
+    calculator = new Calculator();
+  });
 
-  // Require the source file (this will register the DOMContentLoaded listener)
-  require('./app.js');
+  test('should evaluate expression with parentheses and precedence', () => {
+    calculator.input = '(1+2)*(3+4)';
+    calculator.evaluate();
+    expect(calculator.result).toBe(21);
+    expect(resultDisplay.textContent).toBe(21);
+    expect(inputDisplay.textContent).toBe('(1+2)*(3+4)');
+  });
 
-  // Simulate DOMContentLoaded to trigger Calculator initialization
-  if (domReadyHandler) {
-    domReadyHandler();
-  }
+  test('should evaluate exponentiation correctly', () => {
+    calculator.input = '2^3';
+    calculator.evaluate();
+    expect(calculator.result).toBe(8);
+    expect(resultDisplay.textContent).toBe(8);
 
-  // Restore original addEventListener after capture
-  window.addEventListener = originalAddEventListener;
-});
+    calculator.input = '2^3^2';
+    calculator.evaluate();
+    expect(calculator.result).toBe(512);
+  });
 
-// Helper to simulate button click by data-value
-function clickButton(value) {
-  const button = document.querySelector(`.btn[data-value="${value}"]`);
-  if (button) button.click();
-}
+  test('should handle unary minus', () => {
+    calculator.input = '-5+3';
+    calculator.evaluate();
+    expect(calculator.result).toBe(-2);
 
-// Helper to click clear / equals
-function clickClear() {
-  document.getElementById('clear').click();
-}
+    calculator.input = '3*-2';
+    calculator.evaluate();
+    expect(calculator.result).toBe(-6);
+  });
 
-function clickEquals() {
-  document.getElementById('equals').click();
-}
+  test('should return error for empty expression', () => {
+    calculator.input = '';
+    calculator.evaluate();
+    expect(calculator.result).toBe('Error');
+    expect(inputDisplay.textContent).toBe('Enter expression');
+    expect(resultDisplay.textContent).toBe('Error');
+  });
 
-beforeEach(() => {
-  // Reset state before each test via clear button
-  clickClear();
-});
+  test('should return error for division by zero', () => {
+    calculator.input = '10/0';
+    calculator.evaluate();
+    expect(calculator.result).toBe('Error');
+    expect(resultDisplay.textContent).toBe('Error');
+  });
 
-test('should append value and update input display on button click', () => {
-  clickButton('1');
-  expect(document.getElementById('input-display').textContent).toBe('1');
-
-  clickButton('+');
-  expect(document.getElementById('input-display').textContent).toBe('1+');
-
-  clickButton('2');
-  expect(document.getElementById('input-display').textContent).toBe('1+2');
-});
-
-test('should show "Enter expression" when input is empty', () => {
-  expect(document.getElementById('input-display').textContent).toBe('Enter expression');
-  // After appending something, then clearing, should show again
-  clickButton('5');
-  clickClear();
-  expect(document.getElementById('input-display').textContent).toBe('Enter expression');
-});
-
-test('should evaluate expression and show result', () => {
-  clickButton('1');
-  clickButton('+');
-  clickButton('2');
-  clickEquals();
-  expect(document.getElementById('result-display').textContent).toBe('3');
-  // Input display should still show expression
-  expect(document.getElementById('input-display').textContent).toBe('1+2');
-});
-
-test('should show "Error" on invalid expression', () => {
-  clickButton('1');
-  clickButton('/');
-  clickButton('0'); // division by zero returns Infinity, not error; let's use incomplete expression
-  clickClear();
-
-  // Incomplete expression
-  clickButton('5');
-  clickButton('+');
-  clickEquals();
-  expect(document.getElementById('result-display').textContent).toBe('Error');
-  expect(document.getElementById('input-display').textContent).toBe('5+');
-});
-
-test('should clear input and result', () => {
-  clickButton('9');
-  clickButton('-');
-  clickButton('3');
-  clickClear();
-  expect(document.getElementById('input-display').textContent).toBe('Enter expression');
-  expect(document.getElementById('result-display').textContent).toBe('0');
+  test('should return error for missing closing parenthesis', () => {
+    calculator.input = '2*(3+4';
+    calculator.evaluate();
+    expect(calculator.result).toBe('Error');
+    expect(resultDisplay.textContent).toBe('Error');
+  });
 });
