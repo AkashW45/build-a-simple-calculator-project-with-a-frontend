@@ -1,13 +1,12 @@
 {
-  "name": "simple-calculator",
+  "name": "calculator-ui",
   "version": "1.0.0",
-  "description": "A client-side single-page calculator application.",
+  "description": "A simple calculator UI with input display per ADR-001",
+  "main": "index.html",
   "scripts": {
-    "start": "http-server . -o",
-    "preview": "http-server . -o"
+    "start": "npx serve .",
+    "test": "echo \"No tests configured yet\" && exit 0"
   },
-  "devDependencies": {
-    "http-server": "^14.1.1"
-  },
+  "keywords": ["calculator", "ui"],
   "license": "MIT"
 }
